@@ -40,8 +40,10 @@ class ZoneManager:
         Check if tracked person intersects any configured zones.
         Uses bottom-center of bounding box (feet position) for floor residency.
         """
-        cfg = load_config()
-        zones = cfg.get("zones", [])
+        zones = getattr(self, "zones", None)
+        if zones is None:
+            cfg = load_config()
+            zones = cfg.get("zones", [])
         if not zones:
             return []
 

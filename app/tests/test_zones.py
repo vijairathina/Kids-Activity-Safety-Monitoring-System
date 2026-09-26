@@ -20,12 +20,20 @@ class TestZoneSafety(unittest.TestCase):
     def test_danger_zone_entry(self):
         """Tracked person stepping into danger zone generates immediate entry warning."""
         zm = ZoneManager()
-        # Default config has zone_power_1 at [[50, 320], [130, 320], [130, 420], [50, 420]]
+        # Explicit test zone independent of config.yaml
+        zm.zones = [{
+            "id": "zone_test_power",
+            "name": "Test Power Outlet",
+            "points": [[50, 320], [130, 320], [130, 420], [50, 420]],
+            "alert_action": "immediate",
+            "severity": "CRITICAL",
+            "type": "POWER_ZONE"
+        }]
         person = TrackedPerson(track_id=1, box=[60, 330, 100, 390], confidence=0.88)
 
         # Allow initial 0.5s dwell
         now = time.time()
-        zm.dwell_states[(1, "zone_power_1")] = {"entry_time": now - 0.6, "last_alert": 0.0}
+        zm.dwell_states[(1, "zone_test_power")] = {"entry_time": now - 0.6, "last_alert": 0.0}
 
         events = zm.analyze(person)
         self.assertTrue(any("ENTERED" in e.get("event_type", "") for e in events))
