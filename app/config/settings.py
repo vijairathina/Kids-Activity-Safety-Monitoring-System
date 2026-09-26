@@ -131,8 +131,11 @@ def get_default_config():
             "enabled": True,
             "pre_event_sec": 5,
             "post_event_sec": 5,
-            "retention_days": 7,
+            "retention_hours": 24,
+            "retention_days": 1,
             "max_storage_mb": 2048,
+            "max_disk_usage_percent": 70.0,
+            "auto_prune_interval_sec": 300,
             "recordings_path": "data/recordings",
             "snapshots_path": "data/snapshots"
         },

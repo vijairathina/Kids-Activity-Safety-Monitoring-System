@@ -20,7 +20,8 @@ from app.config.settings import (
 )
 from app.events.database import (
     init_db, get_events, acknowledge_event, delete_event,
-    purge_old_events, get_event_stats, log_system_message
+    purge_old_events, get_event_stats, log_system_message,
+    check_storage_status
 )
 from app.camera.stream_manager import StreamManager
 from app.camera.onvif import discover_onvif_cameras, get_camera_stream_uris
@@ -193,14 +194,18 @@ def sse_events_stream():
 
 @app.route("/api/status", methods=["GET"])
 def api_status():
-    """Combined dashboard state: camera, AI metrics, active tracks, and recent events."""
+    """Combined dashboard state: camera, AI metrics, active tracks, storage, and recent events."""
     dash_summary = event_engine.get_dashboard_summary()
     cam_status = stream_manager.get_status()
     sys_metrics = system_monitor.get_system_metrics()
+    storage_info = check_storage_status()
+    cfg = load_config()
 
     return jsonify({
         "camera": cam_status,
         "ai": dash_summary,
+        "storage": storage_info,
+        "retention_hours": cfg.get("recording", {}).get("retention_hours", 24),
         "system": {
             "cpu_percent": sys_metrics["cpu_percent"],
             "cpu_temp_c": sys_metrics["cpu_temp_c"],
@@ -253,11 +258,26 @@ def api_delete_event(event_id):
 
 @app.route("/api/events/purge", methods=["POST"])
 def api_purge_events():
-    """Purge events older than retention period."""
+    """Purge events older than retention period (default 24h)."""
     cfg = load_config()
-    retention_days = int(cfg.get("recording", {}).get("retention_days", 7))
-    count = purge_old_events(retention_days)
-    return jsonify({"success": True, "deleted_count": count})
+    rec_cfg = cfg.get("recording", {})
+    retention_hours = float(rec_cfg.get("retention_hours", 24))
+    count = purge_old_events(retention_hours=retention_hours)
+    return jsonify({
+        "success": True,
+        "deleted_count": count,
+        "retention_hours": retention_hours
+    })
+
+
+@app.route("/api/storage/status", methods=["GET"])
+def api_storage_status():
+    """Query disk storage usage, threshold status, and retention configuration."""
+    cfg = load_config()
+    rec_cfg = cfg.get("recording", {})
+    status = check_storage_status()
+    status["retention_hours"] = rec_cfg.get("retention_hours", 24)
+    return jsonify(status)
 
 
 # ==============================================================================
@@ -462,6 +482,11 @@ def api_save_zones():
 def api_system_metrics():
     """Get real-time CPU, RAM, Disk, Temperature, and AI telemetry."""
     metrics = system_monitor.get_system_metrics()
+    storage_info = check_storage_status()
+    cfg = load_config()
+    rec_cfg = cfg.get("recording", {})
+    metrics["storage"] = storage_info
+    metrics["retention_hours"] = rec_cfg.get("retention_hours", 24)
     return jsonify(metrics)
 
 

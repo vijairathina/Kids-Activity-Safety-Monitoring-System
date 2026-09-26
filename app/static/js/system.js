@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       archVal.textContent = `${data.machine || 'ARMv8'} | ${data.uptime_str || ''}`;
       ramDetail.textContent = `${data.ram_used_mb || 0} MB / ${data.ram_total_mb || 0} MB`;
-      diskDetail.textContent = `${data.disk_free_gb || 0} GB Free of ${data.disk_total_gb || 0} GB`;
+      const canStore = data.storage ? data.storage.can_store : ((data.disk_percent || 0) < 70);
+      diskDetail.innerHTML = `${data.disk_free_gb || 0} GB Free (${data.retention_hours || 24}h retention) &bull; <span style="color: ${canStore ? 'var(--accent-green)' : 'var(--accent-red)'}">${canStore ? 'Storage OK (&lt;70%)' : 'Quota Full (&ge;70%)'}</span>`;
 
       if (data.cpu_temp_c > 75) {
         thermalStatus.textContent = 'High Temperature Warning!';

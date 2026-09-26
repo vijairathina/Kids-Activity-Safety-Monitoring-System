@@ -128,6 +128,7 @@ class EventEngine:
 
         fps_counter = 0
         fps_timer = time.time()
+        last_prune_time = time.time()
 
         while self._running:
             loop_start = time.time()
@@ -276,6 +277,19 @@ class EventEngine:
                 self.ai_fps = round(fps_counter / (time.time() - fps_timer), 1)
                 fps_counter = 0
                 fps_timer = time.time()
+
+            # Periodic 24h retention and storage auto-purge (runs every auto_prune_interval_sec, default 300s)
+            now_t = time.time()
+            prune_interval = float(cfg.get("recording", {}).get("auto_prune_interval_sec", 300))
+            if now_t - last_prune_time >= prune_interval:
+                last_prune_time = now_t
+                try:
+                    from app.events.database import purge_old_events
+                    purged = purge_old_events()
+                    if purged > 0:
+                        print(f"[Engine] Background auto-purge removed {purged} events older than 24 hours.")
+                except Exception as ex:
+                    print(f"[Engine] Auto-purge maintenance warning: {ex}")
 
             elapsed = time.time() - loop_start
             sleep_needed = frame_interval - elapsed

@@ -55,7 +55,12 @@ class SystemMonitor:
         """Fetch snapshot of host system metrics."""
         cpu_pct = psutil.cpu_percent(interval=None)
         mem = psutil.virtual_memory()
-        disk = psutil.disk_usage("/")
+        from pathlib import Path
+        base_dir = str(Path(__file__).resolve().parent.parent.parent)
+        try:
+            disk = psutil.disk_usage(base_dir)
+        except Exception:
+            disk = psutil.disk_usage("/")
         temp = self.get_cpu_temperature()
         uptime_sec = int(time.time() - START_TIME)
 

@@ -81,7 +81,32 @@ class EventRecorder:
         snaps_dir.mkdir(parents=True, exist_ok=True)
         recs_dir.mkdir(parents=True, exist_ok=True)
 
+        retention_hours = float(rec_cfg.get("retention_hours", 24))
+        max_disk_pct = float(rec_cfg.get("max_disk_usage_percent", 70.0))
+
+        # 1. Prune media older than configured retention period (default 24h)
+        self.prune_media_older_than(snaps_dir, retention_hours)
+        self.prune_media_older_than(recs_dir, retention_hours)
+
+        # 2. Enforce folder storage quota
         self._enforce_storage_quota(recs_dir, float(rec_cfg.get("max_storage_mb", 2048)))
+
+        # 3. Check overall disk usage: only store if storage usage is below threshold (e.g. 70%)
+        import shutil
+        try:
+            total, used, free = shutil.disk_usage(str(recs_dir))
+            used_pct = (used / total) * 100.0 if total > 0 else 0.0
+            if used_pct >= max_disk_pct:
+                # Attempt aggressive pruning of oldest recordings
+                self._prune_until_usage_below(recs_dir, snaps_dir, max_disk_pct)
+                total, used, free = shutil.disk_usage(str(recs_dir))
+                used_pct = (used / total) * 100.0 if total > 0 else 0.0
+
+            if used_pct >= max_disk_pct:
+                print(f"[Recorder] Disk usage {used_pct:.1f}% >= {max_disk_pct}%. Skipping recording to preserve system storage.")
+                return None, None
+        except Exception as e:
+            print(f"[Recorder] Disk usage check failed: {e}")
 
         timestamp_str = time.strftime("%Y%m%d_%H%M%S")
         snap_filename = f"{timestamp_str}_{event_type}_{event_id}.jpg"
@@ -136,6 +161,39 @@ class EventRecorder:
             print(f"[Recorder] Event video saved: {out_path} ({len(frames)} frames)")
         except Exception as e:
             print(f"[Recorder] Video encoding failed for {out_path}: {e}")
+
+    @staticmethod
+    def prune_media_older_than(directory: Path, retention_hours: float):
+        """Delete media files older than retention_hours (default: 24 hours)."""
+        try:
+            cutoff_mtime = time.time() - (retention_hours * 3600.0)
+            for f in directory.glob("*.*"):
+                if f.is_file():
+                    try:
+                        if f.stat().st_mtime < cutoff_mtime:
+                            f.unlink()
+                    except OSError:
+                        pass
+        except Exception:
+            pass
+
+    @staticmethod
+    def _prune_until_usage_below(recs_dir: Path, snaps_dir: Path, target_pct: float):
+        """Aggressively delete oldest recording and snapshot files until disk usage drops below target_pct."""
+        import shutil
+        try:
+            files = [f for f in recs_dir.glob("*.*") if f.is_file()] + [f for f in snaps_dir.glob("*.*") if f.is_file()]
+            files.sort(key=lambda x: x.stat().st_mtime)
+            for f in files:
+                total, used, free = shutil.disk_usage(str(recs_dir))
+                if (used / total) * 100.0 < target_pct:
+                    break
+                try:
+                    f.unlink()
+                except OSError:
+                    pass
+        except Exception:
+            pass
 
     @staticmethod
     def _enforce_storage_quota(directory: Path, max_mb: float):

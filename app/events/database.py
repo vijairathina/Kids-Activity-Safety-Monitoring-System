@@ -188,9 +188,66 @@ def delete_event(event_id: int) -> bool:
         return cursor.rowcount > 0
 
 
-def purge_old_events(retention_days: int = 7) -> int:
-    """Purge events and media older than specified retention period."""
-    cutoff = (datetime.now() - timedelta(days=retention_days)).isoformat()
+def check_storage_status(path: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Check disk storage usage and threshold.
+    Returns storage metrics and can_store boolean flag.
+    """
+    import shutil
+    from app.config.settings import load_config
+    cfg = load_config()
+    rec_cfg = cfg.get("recording", {})
+    max_used_pct = float(rec_cfg.get("max_disk_usage_percent", 70.0))
+
+    check_path = path or str(BASE_DIR)
+    try:
+        total, used, free = shutil.disk_usage(check_path)
+        used_pct = (used / total) * 100.0 if total > 0 else 0.0
+        free_pct = (free / total) * 100.0 if total > 0 else 0.0
+        return {
+            "total_gb": round(total / (1024 ** 3), 2),
+            "used_gb": round(used / (1024 ** 3), 2),
+            "free_gb": round(free / (1024 ** 3), 2),
+            "used_percent": round(used_pct, 1),
+            "free_percent": round(free_pct, 1),
+            "max_allowed_percent": round(max_used_pct, 1),
+            "can_store": used_pct < max_used_pct
+        }
+    except Exception as e:
+        return {
+            "total_gb": 0.0,
+            "used_gb": 0.0,
+            "free_gb": 0.0,
+            "used_percent": 0.0,
+            "free_percent": 100.0,
+            "max_allowed_percent": round(max_used_pct, 1),
+            "can_store": True,
+            "error": str(e)
+        }
+
+
+def purge_old_events(
+    retention_hours: Optional[float] = None,
+    retention_days: Optional[float] = None
+) -> int:
+    """
+    Purge events and media older than specified retention period.
+    Defaults to recording.retention_hours (24 hours) from config.yaml.
+    """
+    if retention_hours is None:
+        from app.config.settings import load_config
+        cfg = load_config()
+        rec_cfg = cfg.get("recording", {})
+        if "retention_hours" in rec_cfg:
+            retention_hours = float(rec_cfg.get("retention_hours", 24))
+        elif retention_days is not None:
+            retention_hours = float(retention_days) * 24.0
+        elif "retention_days" in rec_cfg:
+            retention_hours = float(rec_cfg.get("retention_days", 1)) * 24.0
+        else:
+            retention_hours = 24.0
+
+    cutoff = (datetime.now() - timedelta(hours=retention_hours)).isoformat()
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id, snapshot_path, video_clip_path, audio_clip_path FROM events WHERE timestamp < ?", (cutoff,))
