@@ -1,0 +1,31 @@
+[Unit]
+Description=Kids Activity & Safety Monitoring System
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/kids-monitor
+Environment="PATH=/home/pi/kids-monitor/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+Environment="PORT=5000"
+Environment="HOST=0.0.0.0"
+ExecStart=/home/pi/kids-monitor/venv/bin/python3 /home/pi/kids-monitor/run.py
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+# Security sandbox settings
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/pi/kids-monitor/data /home/pi/kids-monitor/app/config
+
+# Standard logging to journalctl
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kids-monitor
+
+[Install]
+WantedBy=multi-user.target

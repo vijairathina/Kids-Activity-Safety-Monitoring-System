@@ -1,0 +1,110 @@
+camera:
+  name: Living Room Camera
+  source_type: demo
+  rtsp_url: rtsp://admin:password@192.168.1.100:554/cam/realmonitor?channel=1&subtype=0&unicast=true&proto=Onvif
+  sub_stream_url: rtsp://admin:password@192.168.1.100:554/cam/realmonitor?channel=1&subtype=1&unicast=true&proto=Onvif
+  username: admin
+  password: ""
+  ip: 192.168.1.100
+  onvif_port: 80
+  fps: 15
+  width: 640
+  height: 480
+  reconnect_interval_sec: 5
+  buffer_size: 1
+ai:
+  backend: auto
+  model_name: yolov8n.pt
+  detection_fps: 6
+  confidence_threshold: 0.50
+  iou_threshold: 0.45
+  target_size:
+  - 320
+  - 320
+  device: cpu
+  track_history_length: 30
+  classes:
+  - person
+  - chair
+  - table
+  - knife
+  - bottle
+  - tv
+  - laptop
+  - book
+  - cell phone
+  - couch
+  - pet
+privacy:
+  privacy_mode: false
+  face_blur: false
+  mask_credentials: true
+  cloud_upload: false
+  log_level: INFO
+fall:
+  enabled: true
+  aspect_ratio_threshold: 1.15
+  angle_threshold_deg: 40.0
+  min_confirmation_sec: 2.0
+  velocity_drop_threshold: 45.0
+  ground_plane_y_ratio: 0.65
+electrical:
+  enabled: true
+  hand_proximity_threshold_px: 50.0
+  proximity_warning_sec: 1.0
+  interaction_warning_sec: 3.0
+conflict:
+  enabled: true
+  max_proximity_px: 90.0
+  rapid_motion_threshold: 25.0
+  min_conflict_sec: 2.0
+  require_audio_correlation: false
+audio:
+  enabled: true
+  sample_rate: 16000
+  rms_threshold: 0.35
+  peak_threshold: 0.7
+  screaming_frequency_min: 1500
+  screaming_frequency_max: 3500
+  listen_device_index: -1
+zones: []
+recording:
+  enabled: true
+  pre_event_sec: 5
+  post_event_sec: 5
+  retention_days: 7
+  max_storage_mb: 2048
+  recordings_path: data/recordings
+  snapshots_path: data/snapshots
+night_mode:
+  enabled: false
+  start_hour: 22
+  end_hour: 6
+  heighten_severity: true
+alerts:
+  web_chime: true
+  telegram:
+    enabled: false
+    bot_token: ''
+    chat_id: ''
+  mqtt:
+    enabled: false
+    broker: localhost
+    port: 1883
+    username: ''
+    password: ''
+    topic_prefix: kids_monitor
+    discovery_enabled: true
+  homeassistant:
+    enabled: false
+    webhook_url: ''
+  webhook:
+    enabled: false
+    endpoint_url: ''
+  gpio:
+    enabled: false
+    buzzer_pin: 18
+    duration_sec: 0.8
+server:
+  host: 0.0.0.0
+  port: 5055

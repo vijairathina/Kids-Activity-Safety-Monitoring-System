@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}System & Safety Settings{% endblock %}
+{% block page_title %}Global Settings & Integrations{% endblock %}
+{% block page_subtitle %}Tune AI sensitivity, fall thresholds, night schedules, and alert integrations{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+  <form id="settings-form">
+    <!-- 1. AI & Vision Pipeline -->
+    <div class="glass-card" style="margin-bottom: 20px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>AI Vision & Edge Inference</span>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">AI Backend</label>
+          <select class="form-select" id="cfg-ai-backend">
+            <option value="auto">Auto-Select (Preferred)</option>
+            <option value="ultralytics">Ultralytics YOLO (v8n / v11n)</option>
+            <option value="opencv_dnn">OpenCV HOG / Lightweight</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Inference Model</label>
+          <input type="text" class="form-input" id="cfg-ai-model" value="yolov8n.pt">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Detection Framerate (FPS)</label>
+          <input type="number" class="form-input" id="cfg-ai-fps" value="6" min="1" max="30">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Detection Confidence Threshold</label>
+          <input type="number" step="0.05" class="form-input" id="cfg-ai-conf" value="0.45" min="0.1" max="1.0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Inference Resolution</label>
+          <select class="form-select" id="cfg-ai-target-size">
+            <option value="320">320x320 (Fastest for Raspberry Pi 3/4)</option>
+            <option value="416">416x416 (Balanced)</option>
+            <option value="640">640x640 (High Accuracy for RPi 5)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Safety Heuristics: Fall & Electrical Hazard -->
+    <div class="glass-card" style="margin-bottom: 20px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Safety Rule Thresholds</span>
+        </div>
+      </div>
+
+      <h4 style="font-size: 13px; color: var(--accent-cyan); margin-bottom: 12px;">Fall Detection Rule</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Aspect Ratio Threshold (W/H)</label>
+          <input type="number" step="0.05" class="form-input" id="cfg-fall-ar" value="1.15">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Body Angle Threshold (deg)</label>
+          <input type="number" class="form-input" id="cfg-fall-angle" value="40">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Min Confirmation Dwell (sec)</label>
+          <input type="number" step="0.5" class="form-input" id="cfg-fall-confirm" value="2.0">
+        </div>
+      </div>
+
+      <h4 style="font-size: 13px; color: var(--accent-amber); margin: 16px 0 12px;">Electrical Hazard Proximity Rule</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Hand Proximity Distance (px)</label>
+          <input type="number" class="form-input" id="cfg-elec-dist" value="50">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Proximity Warning (sec)</label>
+          <input type="number" step="0.5" class="form-input" id="cfg-elec-prox-sec" value="1.0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Interaction Warning (sec)</label>
+          <input type="number" step="0.5" class="form-input" id="cfg-elec-inter-sec" value="3.0">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Audio & Night Mode -->
+    <div class="glass-card" style="margin-bottom: 20px;">
+      <div class="card-header">
+        <div class="card-title">Audio & Night Mode Schedules</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">Audio RMS Volume Threshold (0.0 - 1.0)</label>
+          <input type="number" step="0.05" class="form-input" id="cfg-audio-rms" value="0.35">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Audio Peak Impulse Threshold (0.0 - 1.0)</label>
+          <input type="number" step="0.05" class="form-input" id="cfg-audio-peak" value="0.70">
+        </div>
+      </div>
+
+      <div style="border-top: 1px solid var(--border-glass); padding-top: 14px; margin-top: 6px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div>
+            <div style="font-weight: 600; font-size: 13px;">Night Mode Schedule</div>
+            <div style="font-size: 11px; color: var(--text-dim);">Heighten sensitivity and detect off-hours movement</div>
+          </div>
+          <input type="checkbox" id="cfg-night-enable" style="width: 20px; height: 20px;">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Night Start Hour (24-hour)</label>
+            <input type="number" class="form-input" id="cfg-night-start" value="22" min="0" max="23">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Night End Hour (24-hour)</label>
+            <input type="number" class="form-input" id="cfg-night-end" value="6" min="0" max="23">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Privacy & Anonymization -->
+    <div class="glass-card" style="margin-bottom: 20px;">
+      <div class="card-header">
+        <div class="card-title">Privacy & Local Data Protection</div>
+        <span class="badge badge-subtle">Strictly Local</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 600;">Privacy Mode</div>
+            <div style="font-size: 12px; color: var(--text-dim);">Suppresses all disk recording of snapshots and video clips while maintaining live alerts</div>
+          </div>
+          <input type="checkbox" id="cfg-privacy-mode" style="width: 20px; height: 20px;">
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 600;">Automatic Face Blurring</div>
+            <div style="font-size: 12px; color: var(--text-dim);">Anonymizes facial features in video feed and snapshots via Gaussian blur</div>
+          </div>
+          <input type="checkbox" id="cfg-face-blur" style="width: 20px; height: 20px;">
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Integrations & Alerts -->
+    <div class="glass-card" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div class="card-title">Alert Channels & Smart Home Integrations</div>
+      </div>
+
+      <!-- Telegram -->
+      <h4 style="font-size: 13px; color: var(--accent-cyan); margin-bottom: 10px;">Telegram Messenger</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div class="form-group">
+          <label class="form-label">Bot Token</label>
+          <input type="text" class="form-input" id="cfg-tg-token" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Chat ID</label>
+          <input type="text" class="form-input" id="cfg-tg-chat" placeholder="987654321">
+        </div>
+      </div>
+
+      <!-- Home Assistant & MQTT -->
+      <h4 style="font-size: 13px; color: var(--accent-purple); margin-bottom: 10px;">Home Assistant & MQTT Auto-Discovery</h4>
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+        <div class="form-group">
+          <label class="form-label">MQTT Broker Host</label>
+          <input type="text" class="form-input" id="cfg-mqtt-broker" placeholder="192.168.1.50">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Port</label>
+          <input type="number" class="form-input" id="cfg-mqtt-port" value="1883">
+        </div>
+        <div class="form-group" style="display: flex; align-items: flex-end; padding-bottom: 16px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+            <input type="checkbox" id="cfg-mqtt-enable"> Enable MQTT
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Home Assistant REST Webhook URL</label>
+        <input type="text" class="form-input" id="cfg-ha-webhook" placeholder="http://homeassistant.local:8123/api/webhook/kids_safety_alert">
+      </div>
+
+      <!-- Hardware Buzzer -->
+      <h4 style="font-size: 13px; color: var(--accent-amber); margin: 16px 0 10px;">Raspberry Pi GPIO Buzzer</h4>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label">GPIO Pin (BCM numbering)</label>
+          <input type="number" class="form-input" id="cfg-gpio-pin" value="18">
+        </div>
+        <div class="form-group" style="display: flex; align-items: flex-end; padding-bottom: 16px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+            <input type="checkbox" id="cfg-gpio-enable"> Enable Hardware Buzzer
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Toolbar -->
+    <div style="text-align: right; margin-bottom: 40px;">
+      <button type="button" class="btn btn-primary" id="save-settings-btn" style="padding: 10px 28px; font-size: 14px;">
+        Save Configuration
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const saveBtn = document.getElementById('save-settings-btn');
+
+  // Load existing settings
+  try {
+    const res = await fetch('/api/config');
+    const cfg = await res.json();
+
+    if (cfg.ai) {
+      document.getElementById('cfg-ai-backend').value = cfg.ai.backend || 'auto';
+      document.getElementById('cfg-ai-model').value = cfg.ai.model_name || 'yolov8n.pt';
+      document.getElementById('cfg-ai-fps').value = cfg.ai.detection_fps || 6;
+      document.getElementById('cfg-ai-conf').value = cfg.ai.confidence_threshold || 0.45;
+    }
+
+    if (cfg.fall) {
+      document.getElementById('cfg-fall-ar').value = cfg.fall.aspect_ratio_threshold || 1.15;
+      document.getElementById('cfg-fall-angle').value = cfg.fall.angle_threshold_deg || 40;
+      document.getElementById('cfg-fall-confirm').value = cfg.fall.min_confirmation_sec || 2.0;
+    }
+
+    if (cfg.electrical) {
+      document.getElementById('cfg-elec-dist').value = cfg.electrical.hand_proximity_threshold_px || 50;
+      document.getElementById('cfg-elec-prox-sec').value = cfg.electrical.proximity_warning_sec || 1.0;
+      document.getElementById('cfg-elec-inter-sec').value = cfg.electrical.interaction_warning_sec || 3.0;
+    }
+
+    if (cfg.audio) {
+      document.getElementById('cfg-audio-rms').value = cfg.audio.rms_threshold || 0.35;
+      document.getElementById('cfg-audio-peak').value = cfg.audio.peak_threshold || 0.70;
+    }
+
+    if (cfg.night_mode) {
+      document.getElementById('cfg-night-enable').checked = !!cfg.night_mode.enabled;
+      document.getElementById('cfg-night-start').value = cfg.night_mode.start_hour || 22;
+      document.getElementById('cfg-night-end').value = cfg.night_mode.end_hour || 6;
+    }
+
+    if (cfg.privacy) {
+      document.getElementById('cfg-privacy-mode').checked = !!cfg.privacy.privacy_mode;
+      document.getElementById('cfg-face-blur').checked = !!cfg.privacy.face_blur;
+    }
+
+    if (cfg.alerts) {
+      if (cfg.alerts.telegram) {
+        document.getElementById('cfg-tg-token').value = cfg.alerts.telegram.bot_token || '';
+        document.getElementById('cfg-tg-chat').value = cfg.alerts.telegram.chat_id || '';
+      }
+      if (cfg.alerts.mqtt) {
+        document.getElementById('cfg-mqtt-enable').checked = !!cfg.alerts.mqtt.enabled;
+        document.getElementById('cfg-mqtt-broker').value = cfg.alerts.mqtt.broker || 'localhost';
+        document.getElementById('cfg-mqtt-port').value = cfg.alerts.mqtt.port || 1883;
+      }
+      if (cfg.alerts.homeassistant) {
+        document.getElementById('cfg-ha-webhook').value = cfg.alerts.homeassistant.webhook_url || '';
+      }
+      if (cfg.alerts.gpio) {
+        document.getElementById('cfg-gpio-enable').checked = !!cfg.alerts.gpio.enabled;
+        document.getElementById('cfg-gpio-pin').value = cfg.alerts.gpio.buzzer_pin || 18;
+      }
+    }
+  } catch (e) {
+    console.error('Settings load error:', e);
+  }
+
+  // Save Settings
+  saveBtn.addEventListener('click', async () => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    try {
+      const payload = {
+        ai: {
+          backend: document.getElementById('cfg-ai-backend').value,
+          model_name: document.getElementById('cfg-ai-model').value.trim(),
+          detection_fps: parseInt(document.getElementById('cfg-ai-fps').value) || 6,
+          confidence_threshold: parseFloat(document.getElementById('cfg-ai-conf').value) || 0.45
+        },
+        fall: {
+          aspect_ratio_threshold: parseFloat(document.getElementById('cfg-fall-ar').value) || 1.15,
+          angle_threshold_deg: parseFloat(document.getElementById('cfg-fall-angle').value) || 40.0,
+          min_confirmation_sec: parseFloat(document.getElementById('cfg-fall-confirm').value) || 2.0
+        },
+        electrical: {
+          hand_proximity_threshold_px: parseFloat(document.getElementById('cfg-elec-dist').value) || 50.0,
+          proximity_warning_sec: parseFloat(document.getElementById('cfg-elec-prox-sec').value) || 1.0,
+          interaction_warning_sec: parseFloat(document.getElementById('cfg-elec-inter-sec').value) || 3.0
+        },
+        audio: {
+          rms_threshold: parseFloat(document.getElementById('cfg-audio-rms').value) || 0.35,
+          peak_threshold: parseFloat(document.getElementById('cfg-audio-peak').value) || 0.70
+        },
+        night_mode: {
+          enabled: document.getElementById('cfg-night-enable').checked,
+          start_hour: parseInt(document.getElementById('cfg-night-start').value) || 22,
+          end_hour: parseInt(document.getElementById('cfg-night-end').value) || 6
+        },
+        privacy: {
+          privacy_mode: document.getElementById('cfg-privacy-mode').checked,
+          face_blur: document.getElementById('cfg-face-blur').checked
+        },
+        alerts: {
+          telegram: {
+            enabled: !!document.getElementById('cfg-tg-token').value.trim(),
+            bot_token: document.getElementById('cfg-tg-token').value.trim(),
+            chat_id: document.getElementById('cfg-tg-chat').value.trim()
+          },
+          mqtt: {
+            enabled: document.getElementById('cfg-mqtt-enable').checked,
+            broker: document.getElementById('cfg-mqtt-broker').value.trim(),
+            port: parseInt(document.getElementById('cfg-mqtt-port').value) || 1883
+          },
+          homeassistant: {
+            enabled: !!document.getElementById('cfg-ha-webhook').value.trim(),
+            webhook_url: document.getElementById('cfg-ha-webhook').value.trim()
+          },
+          gpio: {
+            enabled: document.getElementById('cfg-gpio-enable').checked,
+            buzzer_pin: parseInt(document.getElementById('cfg-gpio-pin').value) || 18
+          }
+        }
+      };
+
+      const res = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const d = await res.json();
+      if (d.success) {
+        alert('Configuration saved successfully!');
+      }
+    } catch (err) {
+      alert(`Save error: ${err.message}`);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Configuration';
+    }
+  });
+});
+</script>
+{% endblock %}

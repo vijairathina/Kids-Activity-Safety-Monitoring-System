@@ -1,0 +1,55 @@
+# ==============================================================================
+# Git Ignore - Kids Activity & Safety Monitoring System
+# Sensitive credentials, recordings, databases, virtualenvs, and weights ignored
+# ==============================================================================
+
+# Private Configurations & Credentials
+app/config/config.yaml
+.env
+*.env
+*.pem
+*.key
+*.cert
+
+# Local Media, Video Clips & SQLite Database
+data/
+data/kids_safety.db
+data/*.db
+data/recordings/
+data/recordings/*
+data/snapshots/
+data/snapshots/*
+
+# Model Weights (Auto-downloaded by Ultralytics / OpenCV)
+*.pt
+*.onnx
+*.engine
+*.bin
+*.weights
+yolov8n.pt
+
+# Python Virtual Environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Logs & Runtime telemetry
+*.log
+logs/
+
+# IDE / Editor configuration
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db

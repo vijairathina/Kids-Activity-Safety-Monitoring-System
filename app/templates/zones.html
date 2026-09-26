@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Danger Zone Editor{% endblock %}
+{% block page_title %}Safety & Danger Zone Editor{% endblock %}
+{% block page_subtitle %}Draw polygons and safe perimeters directly on the live camera view{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px;">
+  <!-- Left Column: Interactive HTML5 Canvas -->
+  <div class="glass-card">
+    <div class="card-header">
+      <div class="card-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        <span>Interactive Canvas</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-glass" id="mode-poly-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>
+          <span>Draw Polygon</span>
+        </button>
+        <button class="btn btn-glass" id="mode-rect-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          <span>Draw Rectangle</span>
+        </button>
+        <button class="btn btn-glass" id="refresh-bg-btn" title="Refresh Background Snapshot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span>Snapshot</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Canvas Container -->
+    <div style="position: relative; width: 100%; aspect-ratio: 4 / 3; background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border-glass);">
+      <canvas id="zone-canvas" width="640" height="480" style="width: 100%; height: 100%; cursor: crosshair; display: block;"></canvas>
+    </div>
+
+    <div style="margin-top: 10px; font-size: 12px; color: var(--text-dim); display: flex; justify-content: space-between;">
+      <span>💡 Tip: Click on canvas to place vertices. Double-click or click initial point to close polygon. Drag circles to adjust.</span>
+      <span id="canvas-mouse-coords">X: 0, Y: 0</span>
+    </div>
+  </div>
+
+  <!-- Right Column: Zone Properties & Zones List -->
+  <div>
+    <!-- Selected Zone Inspector -->
+    <div class="glass-card" id="zone-inspector-card">
+      <div class="card-header">
+        <div class="card-title">Zone Inspector</div>
+        <button class="btn btn-danger" id="delete-zone-btn" style="font-size: 11px; padding: 4px 10px;">Delete</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Zone Name</label>
+        <input type="text" class="form-input" id="zone-name-input" placeholder="Wall Socket Outlet">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Zone Safety Type</label>
+        <select class="form-select" id="zone-type-select">
+          <option value="POWER_ZONE">POWER_ZONE (Electrical sockets, lamps, panels)</option>
+          <option value="STAIR_ZONE">STAIR_ZONE (Staircases & steps)</option>
+          <option value="BALCONY_ZONE">BALCONY_ZONE (Balcony & windows)</option>
+          <option value="KITCHEN_ZONE">KITCHEN_ZONE (Stove, oven, sharp cutlery)</option>
+          <option value="DANGER_ZONE">DANGER_ZONE (General hazardous area)</option>
+          <option value="SAFE_ZONE">SAFE_ZONE (Safe play mat / nursery area)</option>
+          <option value="CUSTOM">CUSTOM</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group">
+          <label class="form-label">Severity Level</label>
+          <select class="form-select" id="zone-severity-select">
+            <option value="CRITICAL">CRITICAL</option>
+            <option value="WARNING">WARNING</option>
+            <option value="INFO">INFO</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Zone Color</label>
+          <input type="color" class="form-input" id="zone-color-input" value="#ff3366" style="height: 38px; padding: 2px;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Min Dwell Trigger Duration (seconds)</label>
+        <input type="number" step="0.5" class="form-input" id="zone-duration-input" value="1.5">
+        <small style="color: var(--text-dim); display: block; margin-top: 4px;">
+          Person must remain in zone for this duration to confirm sustained danger.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Alert Action</label>
+        <select class="form-select" id="zone-alert-action">
+          <option value="immediate">Immediate Siren & Push Alert</option>
+          <option value="warning">Warning Only</option>
+          <option value="none">Silent Log Only</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Active Zones List -->
+    <div class="glass-card" style="margin-top: 16px;">
+      <div class="card-header">
+        <div class="card-title">Configured Zones (<span id="zones-count-badge">0</span>)</div>
+        <button class="btn btn-primary" id="save-all-zones-btn">Save All Zones</button>
+      </div>
+
+      <div id="zones-chip-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/zones.js') }}"></script>
+{% endblock %}

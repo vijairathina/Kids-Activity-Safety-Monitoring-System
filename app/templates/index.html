@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Live Monitor - Kids Safety{% endblock %}
+{% block page_title %}Safety Monitoring Dashboard{% endblock %}
+{% block page_subtitle %}Live RTSP video analysis & real-time child activity telemetry{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+  <!-- Left Column: Video Feed & Metrics -->
+  <div class="main-stream-column">
+    <!-- Camera Viewport Card -->
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>Live Camera View</span>
+          <span class="badge badge-info" id="cam-resolution-badge">640x480</span>
+        </div>
+        <div class="card-actions" style="display: flex; gap: 8px;">
+          <!-- Demo Scenario Selector -->
+          <select class="form-select" id="demo-scenario-select" style="padding: 4px 10px; font-size: 12px; width: auto;" title="Simulate scenario in Demo mode">
+            <option value="normal">Scenario: Normal Play</option>
+            <option value="watching_tv">Scenario: Watching TV</option>
+            <option value="dancing">Scenario: Dancing</option>
+            <option value="playing">Scenario: Active Playing</option>
+            <option value="reading">Scenario: Reading Book</option>
+            <option value="writing">Scenario: Writing / Homework</option>
+            <option value="fall">Scenario: Simulated Fall</option>
+            <option value="electrical">Scenario: Power Socket Hazard</option>
+            <option value="conflict">Scenario: Physical Conflict</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Live Video Feed Container -->
+      <div class="video-container" id="video-wrapper">
+        <img id="live-stream-img" src="/video_feed?overlay=true" alt="Live Camera Feed">
+        
+        <div class="video-controls">
+          <div class="video-controls-left">
+            <button class="btn btn-glass" id="toggle-overlay-btn" title="Toggle AI bounding boxes and skeletons">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              <span>Overlays: ON</span>
+            </button>
+            <button class="btn btn-glass" id="take-snapshot-btn" title="Download Snapshot">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>Snapshot</span>
+            </button>
+          </div>
+          <div class="video-controls-right">
+            <span class="badge badge-subtle" id="stream-fps-badge">-- FPS</span>
+            <span class="badge badge-subtle" id="stream-latency-badge">-- ms</span>
+            <button class="btn btn-glass btn-icon" id="fullscreen-btn" title="Fullscreen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Telemetry Stats -->
+      <div class="stat-grid-4">
+        <div class="stat-box">
+          <div class="stat-label">AI Inference</div>
+          <div class="stat-value" id="val-ai-fps">-- FPS</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Latency / Time</div>
+          <div class="stat-value" id="val-inference-ms">-- ms</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">CPU / Temp</div>
+          <div class="stat-value" id="val-cpu-temp">--% / --°C</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Active Persons</div>
+          <div class="stat-value" id="val-person-count">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Current Activity & Real-time Alerts -->
+  <div class="sidebar-column">
+    <!-- Current Activity State Card -->
+    <div class="glass-card current-activity-card">
+      <div class="card-header" style="margin-bottom: 8px;">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+          <span>Current Activity</span>
+        </div>
+        <span class="badge badge-subtle" id="activity-confidence-pill">DETECTED</span>
+      </div>
+
+      <div id="activity-state-box">
+        <span class="activity-badge-large" id="primary-activity-badge" style="background: rgba(0, 230, 118, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 230, 118, 0.3);">
+          NORMAL MOVEMENT
+        </span>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px;" id="activity-desc-text">
+          Children roaming in designated safe area.
+        </div>
+      </div>
+
+      <!-- Real-time Audio Level Monitor -->
+      <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-glass);">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+          <span style="color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            Room Microphone
+          </span>
+          <span style="font-family: 'JetBrains Mono', monospace;" id="audio-rms-val">RMS: 0.02</span>
+        </div>
+        <div class="audio-meter">
+          <div class="audio-meter-fill" id="audio-meter-bar"></div>
+        </div>
+        <!-- Test Audio Simulation Buttons -->
+        <div style="display: flex; gap: 6px; margin-top: 8px;">
+          <button class="btn btn-glass" style="font-size: 11px; padding: 4px 8px; flex: 1;" onclick="triggerTestAudio('screaming')">Test Scream</button>
+          <button class="btn btn-glass" style="font-size: 11px; padding: 4px 8px; flex: 1;" onclick="triggerTestAudio('impact')">Test Impact</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Recent Events Stream -->
+    <div class="glass-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Real-time Safety Events</span>
+        </div>
+        <a href="/events" class="badge badge-subtle" style="text-decoration: none;">View All</a>
+      </div>
+
+      <div class="events-stream" id="events-stream-list">
+        <div style="text-align: center; color: var(--text-dim); padding: 20px 0; font-size: 13px;" id="empty-events-msg">
+          Monitoring active. No hazardous events detected yet.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

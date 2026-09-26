@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Event History & Evidence{% endblock %}
+{% block page_title %}Safety Event History & Recordings{% endblock %}
+{% block page_subtitle %}Review chronological safety alerts, snapshots, and recorded video clips{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Row -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+  <div class="glass-card">
+    <div class="stat-label">Total Events Logged</div>
+    <div class="stat-value" id="stat-total-events">0</div>
+  </div>
+  <div class="glass-card">
+    <div class="stat-label">Events Today</div>
+    <div class="stat-value" id="stat-today-events">0</div>
+  </div>
+  <div class="glass-card">
+    <div class="stat-label">Unacknowledged Critical</div>
+    <div class="stat-value" style="color: var(--accent-red);" id="stat-unack-critical">0</div>
+  </div>
+  <div class="glass-card">
+    <div class="stat-label">Retention Quota</div>
+    <div class="stat-value" style="font-size: 14px; margin-top: 8px;">
+      <button class="btn btn-glass" id="purge-events-btn" style="font-size: 11px; padding: 4px 10px;">
+        Purge >7 Days Old
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Filter Toolbar Card -->
+<div class="glass-card" style="margin-bottom: 20px; padding: 14px 20px;">
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Time:</span>
+      <button class="btn btn-glass active-filter" data-range="today" style="font-size: 12px; padding: 5px 10px;">Today</button>
+      <button class="btn btn-glass" data-range="yesterday" style="font-size: 12px; padding: 5px 10px;">Yesterday</button>
+      <button class="btn btn-glass" data-range="7d" style="font-size: 12px; padding: 5px 10px;">Last 7 Days</button>
+      <button class="btn btn-glass" data-range="30d" style="font-size: 12px; padding: 5px 10px;">Last 30 Days</button>
+      <button class="btn btn-glass" data-range="all" style="font-size: 12px; padding: 5px 10px;">All</button>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <select class="form-select" id="filter-type-select" style="width: auto; padding: 6px 12px; font-size: 12px;">
+        <option value="ALL">All Event Types</option>
+        <option value="FALL_DETECTED">Fall Detected</option>
+        <option value="CHILD_ENTERED_POWER_ZONE">Power Zone Intrusion</option>
+        <option value="POSSIBLE_ELECTRICAL_INTERACTION">Electrical Hazard</option>
+        <option value="CHILD_ENTERED_STAIR_ZONE">Staircase Threat</option>
+        <option value="POSSIBLE_PHYSICAL_CONFLICT">Physical Conflict</option>
+        <option value="SCREAM_DETECTED">Scream / Loud Noise</option>
+      </select>
+
+      <select class="form-select" id="filter-severity-select" style="width: auto; padding: 6px 12px; font-size: 12px;">
+        <option value="ALL">All Severities</option>
+        <option value="CRITICAL">Critical Only</option>
+        <option value="WARNING">Warning Only</option>
+        <option value="INFO">Info Only</option>
+      </select>
+
+      <button class="btn btn-primary" id="refresh-events-btn" style="font-size: 12px; padding: 6px 12px;">
+        Refresh
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Events Table Card -->
+<div class="glass-card">
+  <div style="overflow-x: auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Event Condition</th>
+          <th>Severity</th>
+          <th>Confidence</th>
+          <th>Person / Zone</th>
+          <th>Media Evidence</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="events-table-body">
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px 0;">Loading event records...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Evidence Media Modal -->
+<div class="modal-backdrop" id="media-modal">
+  <div class="modal-box">
+    <div class="card-header">
+      <div class="card-title" id="modal-title">Event Evidence</div>
+      <button class="btn btn-glass btn-icon" id="close-modal-btn">✕</button>
+    </div>
+    <div id="modal-body" style="text-align: center;">
+      <!-- Image or Video injected dynamically -->
+    </div>
+    <div style="margin-top: 16px; font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between;" id="modal-footer">
+      <span id="modal-details-text"></span>
+      <span id="modal-time-text"></span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/events.js') }}"></script>
+{% endblock %}
