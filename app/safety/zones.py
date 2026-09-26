@@ -72,6 +72,20 @@ class ZoneManager:
             if len(pts) < 3:
                 continue
 
+            # Check PTZ orientation for 360-degree cameras
+            from app.camera.ptz import ptz_controller
+            ptz_stat = ptz_controller.get_status()
+            current_pos = ptz_stat.get("position", {})
+            current_pan = current_pos.get("pan")
+            current_tilt = current_pos.get("tilt")
+            cal_pan = zone.get("calibrated_pan")
+            cal_tilt = zone.get("calibrated_tilt")
+
+            if cal_pan is not None and current_pan is not None and cal_tilt is not None and current_tilt is not None:
+                # If camera is pointed in a different direction, skip zone
+                if abs(current_pan - float(cal_pan)) > 0.20 or abs(current_tilt - float(cal_tilt)) > 0.20:
+                    continue
+
             # Check if feet or center point is inside polygon
             is_inside = point_in_polygon(feet_pt, pts) or point_in_polygon(center_pt, pts)
             state_key = (person.track_id, zid)

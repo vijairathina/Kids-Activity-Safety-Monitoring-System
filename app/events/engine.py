@@ -171,6 +171,9 @@ class EventEngine:
                 has_any_conflict = True
                 current_frame_events.extend(conflict_events)
 
+            from app.camera.ptz import ptz_controller
+            camera_is_moving = ptz_controller.is_camera_moving()
+
             # Evaluate per-person safety conditions
             for person in tracks:
                 # On-demand pose estimation (preserves Raspberry Pi CPU)
@@ -178,18 +181,21 @@ class EventEngine:
                 person.pose_data = pose_data
                 poses_dict[person.track_id] = pose_data
 
-                # Fall Detection
-                fall_ev = self.fall_detector.analyze(person, pose_data, frame.shape)
-                if fall_ev:
-                    current_frame_events.append(fall_ev)
+                fall_ev = None
+                # If 360-degree PTZ camera is rotating, suppress position-based false alarms
+                if not camera_is_moving:
+                    # Fall Detection
+                    fall_ev = self.fall_detector.analyze(person, pose_data, frame.shape)
+                    if fall_ev:
+                        current_frame_events.append(fall_ev)
 
-                # Zone Intrusion / Safe Zone checks
-                zone_events = self.zone_manager.analyze(person)
-                current_frame_events.extend(zone_events)
+                    # Zone Intrusion / Safe Zone checks
+                    zone_events = self.zone_manager.analyze(person)
+                    current_frame_events.extend(zone_events)
 
-                # Electrical Hazard Proximity
-                elec_events = self.electrical_detector.analyze(person, pose_data)
-                current_frame_events.extend(elec_events)
+                    # Electrical Hazard Proximity
+                    elec_events = self.electrical_detector.analyze(person, pose_data)
+                    current_frame_events.extend(elec_events)
 
                 # Activity State Machine (Safety, Watching TV, Dancing, Playing, Reading, Writing)
                 in_danger = bool(person.zone_id and "SAFE" not in person.zone_id.upper())
@@ -203,9 +209,10 @@ class EventEngine:
                     is_fall_detected=is_fall
                 )
 
-            # Anomaly and Night Mode detection
-            anomaly_events = self.anomaly_detector.analyze(tracks)
-            current_frame_events.extend(anomaly_events)
+            # Anomaly and Night Mode detection (suppressed when camera rotating)
+            if not camera_is_moving:
+                anomaly_events = self.anomaly_detector.analyze(tracks)
+                current_frame_events.extend(anomaly_events)
 
             # Standalone audio events (e.g. scream without visible person)
             if audio_ev and not any(e.get("event_type") == audio_ev.get("type") for e in current_frame_events):

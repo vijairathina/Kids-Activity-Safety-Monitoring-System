@@ -52,6 +52,19 @@ class StreamManager:
         self.stream.start()
         self._is_active = True
 
+        # Initialize PTZ controller for 360 camera
+        from app.camera.ptz import ptz_controller
+        cam_ip = cam_cfg.get("ip", "")
+        cam_port = int(cam_cfg.get("onvif_port", 80))
+        cam_user = cam_cfg.get("username", "admin")
+        cam_pass = cam_cfg.get("password", "")
+        if cam_ip:
+            threading.Thread(
+                target=ptz_controller.connect,
+                args=(cam_ip, cam_port, cam_user, cam_pass),
+                daemon=True
+            ).start()
+
     def set_ai_pipeline(self, pipeline):
         """Attach AI pipeline for drawing overlays on live stream."""
         self.ai_pipeline = pipeline
@@ -113,6 +126,23 @@ class StreamManager:
                         display_frame = frame
                 else:
                     display_frame = frame
+
+                # Draw PTZ movement badge if camera is rotating
+                from app.camera.ptz import ptz_controller
+                if ptz_controller.is_camera_moving():
+                    h_f, w_f = display_frame.shape[:2]
+                    cv2.rectangle(display_frame, (12, 12), (360, 42), (20, 20, 25), -1)
+                    cv2.rectangle(display_frame, (12, 12), (360, 42), (255, 145, 0), 1)
+                    cv2.putText(
+                        display_frame,
+                        "360 PTZ ROTATING - ALERTS PAUSED",
+                        (20, 32),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.44,
+                        (0, 240, 255),
+                        1,
+                        cv2.LINE_AA
+                    )
 
             # Encode as JPEG with medium compression for low bandwidth
             ret_enc, jpeg_buf = cv2.imencode(".jpg", display_frame, [cv2.IMWRITE_JPEG_QUALITY, 75])

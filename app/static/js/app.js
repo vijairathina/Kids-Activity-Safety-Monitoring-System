@@ -252,6 +252,121 @@ document.addEventListener('DOMContentLoaded', () => {
     activityConfidencePill.textContent = qualifier;
   }
 
+  // 360-Degree ONVIF PTZ Controls Handler
+  function initPTZControls() {
+    const btnUp = document.getElementById('ptz-btn-up');
+    const btnDown = document.getElementById('ptz-btn-down');
+    const btnLeft = document.getElementById('ptz-btn-left');
+    const btnRight = document.getElementById('ptz-btn-right');
+    const btnStop = document.getElementById('ptz-btn-stop');
+    const btnStepLeft = document.getElementById('ptz-step-left');
+    const btnStepRight = document.getElementById('ptz-step-right');
+    const speedSlider = document.getElementById('ptz-speed-slider');
+    const speedVal = document.getElementById('ptz-speed-val');
+    const posDisplay = document.getElementById('ptz-pos-display');
+    const motionBadge = document.getElementById('ptz-motion-badge');
+
+    if (!btnUp) return;
+
+    if (speedSlider && speedVal) {
+      speedSlider.addEventListener('input', (e) => {
+        speedVal.textContent = e.target.value;
+      });
+    }
+
+    async function sendPTZMove(direction, duration = 0.4) {
+      const speed = parseFloat(speedSlider ? speedSlider.value : 0.4);
+      if (motionBadge) {
+        motionBadge.textContent = 'ROTATING...';
+        motionBadge.style.color = 'var(--accent-cyan)';
+      }
+      try {
+        await fetch('/api/camera/ptz/move', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction, speed, duration })
+        });
+      } catch (err) {
+        console.error('PTZ move failed:', err);
+      }
+    }
+
+    async function sendPTZStep(direction, step = 0.15) {
+      if (motionBadge) {
+        motionBadge.textContent = 'STEPPING...';
+        motionBadge.style.color = 'var(--accent-cyan)';
+      }
+      try {
+        await fetch('/api/camera/ptz/step', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ direction, step })
+        });
+      } catch (err) {
+        console.error('PTZ step failed:', err);
+      }
+    }
+
+    async function sendPTZStop() {
+      try {
+        await fetch('/api/camera/ptz/stop', { method: 'POST' });
+        if (motionBadge) {
+          motionBadge.textContent = 'STATIC VIEW';
+          motionBadge.style.color = 'var(--text-muted)';
+        }
+      } catch (err) {
+        console.error('PTZ stop failed:', err);
+      }
+    }
+
+    btnUp.addEventListener('click', () => sendPTZMove('up'));
+    btnDown.addEventListener('click', () => sendPTZMove('down'));
+    btnLeft.addEventListener('click', () => sendPTZMove('left'));
+    btnRight.addEventListener('click', () => sendPTZMove('right'));
+    btnStop.addEventListener('click', sendPTZStop);
+
+    if (btnStepLeft) btnStepLeft.addEventListener('click', () => sendPTZStep('left', 0.15));
+    if (btnStepRight) btnStepRight.addEventListener('click', () => sendPTZStep('right', 0.15));
+
+    // Keyboard Arrow Keys (Shift + Arrows for PTZ control)
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.shiftKey) {
+        if (e.key === 'ArrowUp') { e.preventDefault(); sendPTZMove('up'); }
+        if (e.key === 'ArrowDown') { e.preventDefault(); sendPTZMove('down'); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); sendPTZMove('left'); }
+        if (e.key === 'ArrowRight') { e.preventDefault(); sendPTZMove('right'); }
+        if (e.key === ' ') { e.preventDefault(); sendPTZStop(); }
+      }
+    });
+
+    // Periodic PTZ status poll
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/camera/ptz/status');
+        const data = await res.json();
+        if (posDisplay && data.position) {
+          posDisplay.textContent = `Pan: ${data.position.pan?.toFixed(2) ?? '0.00'} | Tilt: ${data.position.tilt?.toFixed(2) ?? '0.00'}`;
+        }
+        if (motionBadge) {
+          if (data.is_moving) {
+            motionBadge.textContent = 'ROTATING (ALERTS PAUSED)';
+            motionBadge.style.color = '#00f0ff';
+            motionBadge.style.borderColor = 'rgba(0, 240, 255, 0.5)';
+          } else {
+            motionBadge.textContent = 'STATIC VIEW';
+            motionBadge.style.color = 'var(--text-muted)';
+            motionBadge.style.borderColor = 'transparent';
+          }
+        }
+      } catch (err) {
+        // silent
+      }
+    }, 2000);
+  }
+
+  initPTZControls();
+
   setInterval(pollStatus, 1500);
   pollStatus();
 });

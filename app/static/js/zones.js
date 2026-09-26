@@ -309,6 +309,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       zoneColorInput.value = z.color || '#ff3366';
       zoneDurationInput.value = z.min_duration_sec || 1.5;
       zoneAlertAction.value = z.alert_action || 'immediate';
+
+      const ptzBadge = document.getElementById('zone-ptz-badge');
+      const panInput = document.getElementById('zone-pan-input');
+      const tiltInput = document.getElementById('zone-tilt-input');
+      if (panInput && tiltInput && ptzBadge) {
+        if (z.calibrated_pan !== undefined && z.calibrated_pan !== null) {
+          panInput.value = z.calibrated_pan;
+          tiltInput.value = z.calibrated_tilt ?? 0;
+          ptzBadge.textContent = `LOCKED (${z.calibrated_pan.toFixed(2)}, ${(z.calibrated_tilt ?? 0).toFixed(2)})`;
+          ptzBadge.style.color = '#00f0ff';
+        } else {
+          panInput.value = '';
+          tiltInput.value = '';
+          ptzBadge.textContent = 'ALL ANGLES';
+          ptzBadge.style.color = 'var(--text-muted)';
+        }
+      }
     }
     updateZonesList();
     drawCanvas();
@@ -327,6 +344,42 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateZonesList();
       drawCanvas();
     }
+  }
+
+  // 360 PTZ Angle Lock controls
+  const capturePtzBtn = document.getElementById('capture-ptz-btn');
+  const clearPtzBtn = document.getElementById('clear-ptz-btn');
+  if (capturePtzBtn) {
+    capturePtzBtn.addEventListener('click', async () => {
+      if (selectedZoneIndex < 0 || !zones[selectedZoneIndex]) {
+        alert('Please select or draw a zone first to lock its camera angle.');
+        return;
+      }
+      try {
+        const res = await fetch('/api/camera/ptz/status');
+        const data = await res.json();
+        if (data.position && data.position.pan !== undefined) {
+          const z = zones[selectedZoneIndex];
+          z.calibrated_pan = data.position.pan;
+          z.calibrated_tilt = data.position.tilt;
+          selectZone(selectedZoneIndex);
+        } else {
+          alert('Camera PTZ position unavailable.');
+        }
+      } catch (e) {
+        console.error('PTZ capture failed:', e);
+      }
+    });
+  }
+
+  if (clearPtzBtn) {
+    clearPtzBtn.addEventListener('click', () => {
+      if (selectedZoneIndex >= 0 && zones[selectedZoneIndex]) {
+        delete zones[selectedZoneIndex].calibrated_pan;
+        delete zones[selectedZoneIndex].calibrated_tilt;
+        selectZone(selectedZoneIndex);
+      }
+    });
   }
 
   zoneNameInput.addEventListener('input', syncInspectorToZone);

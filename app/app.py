@@ -392,6 +392,48 @@ def api_set_demo_scenario():
 
 
 # ==============================================================================
+# 360-Degree ONVIF PTZ Camera Controls
+# ==============================================================================
+
+@app.route("/api/camera/ptz/status", methods=["GET"])
+def api_ptz_status():
+    """Return 360 PTZ position, support state, and movement flag."""
+    from app.camera.ptz import ptz_controller
+    return jsonify(ptz_controller.get_status())
+
+
+@app.route("/api/camera/ptz/move", methods=["POST"])
+def api_ptz_move():
+    """Execute continuous or timed 360 Pan/Tilt rotation."""
+    from app.camera.ptz import ptz_controller
+    data = request.get_json(silent=True) or {}
+    direction = data.get("direction", "stop")
+    speed = float(data.get("speed", 0.4))
+    duration = float(data.get("duration", 0.4))
+    res = ptz_controller.move(direction, speed=speed, duration=duration)
+    return jsonify(res)
+
+
+@app.route("/api/camera/ptz/step", methods=["POST"])
+def api_ptz_step():
+    """Step 360 camera in a direction by a fixed amount."""
+    from app.camera.ptz import ptz_controller
+    data = request.get_json(silent=True) or {}
+    direction = data.get("direction", "")
+    step_size = float(data.get("step", 0.1))
+    res = ptz_controller.step(direction, step_size=step_size)
+    return jsonify(res)
+
+
+@app.route("/api/camera/ptz/stop", methods=["POST"])
+def api_ptz_stop():
+    """Immediately halt 360 Pan/Tilt rotation."""
+    from app.camera.ptz import ptz_controller
+    return jsonify(ptz_controller.stop())
+
+
+
+# ==============================================================================
 # Zone Management API
 # ==============================================================================
 

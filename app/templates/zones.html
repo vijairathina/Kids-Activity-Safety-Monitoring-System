@@ -98,6 +98,27 @@
           <option value="none">Silent Log Only</option>
         </select>
       </div>
+
+      <!-- 360 Camera PTZ Angle Binding -->
+      <div class="form-group" style="background: rgba(0, 240, 255, 0.05); padding: 12px; border-radius: var(--radius-sm); border: 1px dashed rgba(0, 240, 255, 0.3); margin-top: 10px;">
+        <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span>360° Camera View Binding</span>
+          <span class="badge badge-subtle" id="zone-ptz-badge" style="font-size: 10px;">ALL ANGLES</span>
+        </label>
+        <div style="font-size: 11px; color: var(--text-dim); margin-bottom: 8px;">
+          For 360° rotating cameras: lock this zone to current Pan/Tilt so it only triggers when camera is facing this direction.
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button class="btn btn-glass" type="button" id="capture-ptz-btn" style="flex: 1; font-size: 11px; padding: 6px;">
+            🔒 Lock to Current Angle
+          </button>
+          <button class="btn btn-glass" type="button" id="clear-ptz-btn" style="font-size: 11px; padding: 6px;" title="Reset to all angles">
+            Reset
+          </button>
+        </div>
+        <input type="hidden" id="zone-pan-input" value="">
+        <input type="hidden" id="zone-tilt-input" value="">
+      </div>
     </div>
 
     <!-- Active Zones List -->

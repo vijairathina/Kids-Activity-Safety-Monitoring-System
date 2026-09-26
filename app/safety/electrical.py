@@ -74,6 +74,19 @@ class ElectricalSafetyDetector:
             if len(pts) < 3:
                 continue
 
+            # Check PTZ orientation for 360-degree cameras
+            from app.camera.ptz import ptz_controller
+            ptz_stat = ptz_controller.get_status()
+            current_pos = ptz_stat.get("position", {})
+            current_pan = current_pos.get("pan")
+            current_tilt = current_pos.get("tilt")
+            cal_pan = pz.get("calibrated_pan")
+            cal_tilt = pz.get("calibrated_tilt")
+
+            if cal_pan is not None and current_pan is not None and cal_tilt is not None and current_tilt is not None:
+                if abs(current_pan - float(cal_pan)) > 0.20 or abs(current_tilt - float(cal_tilt)) > 0.20:
+                    continue
+
             # Find closest distance from any hand to zone
             min_dist = min([distance_point_to_polygon(h, pts) for h in hands])
             state_key = (person.track_id, zid)
