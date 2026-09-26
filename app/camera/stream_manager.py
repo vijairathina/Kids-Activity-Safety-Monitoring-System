@@ -5,6 +5,7 @@ snapshots, source switching, and resolution adjustments.
 
 import time
 import math
+import threading
 import cv2
 import numpy as np
 from typing import Generator, Optional, Dict, Any, Tuple
