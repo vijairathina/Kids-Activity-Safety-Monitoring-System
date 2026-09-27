@@ -161,6 +161,16 @@ def serve_media(filename):
     return "File not found", 404
 
 
+@app.route("/favicon.ico")
+def favicon():
+    """Serve shield favicon."""
+    return send_from_directory(
+        str(BASE_DIR / "app" / "static" / "icons"),
+        "shield.png",
+        mimetype="image/png"
+    )
+
+
 # ==============================================================================
 # Live Server-Sent Events (SSE) Stream
 # ==============================================================================
